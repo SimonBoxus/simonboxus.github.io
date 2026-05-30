@@ -4,19 +4,8 @@
     const saved = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (saved === 'dark' || (!saved && prefersDark)) root.setAttribute('data-theme', 'dark');
-    themeToggle.addEventListener('click', () => {
-      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      if (next === 'dark') root.setAttribute('data-theme', 'dark');
-      else root.removeAttribute('data-theme');
-      localStorage.setItem('theme', next);
-      // Reposition lenses (transitions can change geometry)
-      requestAnimationFrame(() => {
-        const topActive = document.querySelector('.nav-links a.active');
-        const botActive = document.querySelector('.bottom-nav-item.active');
-        if (topActive && topCtrl) topCtrl.move(topActive);
-        if (botActive && botCtrl) botCtrl.move(botActive);
-      });
-    });
+    // Note: the theme-toggle click handler lives in the View Transitions
+    // section below (it supersedes the simpler handler that used to be here).
 
     // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(link => {
@@ -72,6 +61,7 @@
       const botActive = [...botItems].find(i => i.classList.contains('active'));
       if (topCtrl && topActive) topCtrl.move(topActive);
       if (botCtrl && botActive) botCtrl.move(botActive);
+      setScrollDotActive(id);
     }
 
     // Wait for layout, then position lens to active item
@@ -82,16 +72,12 @@
       if (botCtrl && initialBot) { botCtrl.activate(initialBot); }
     });
 
-    // Track scroll position
+    // Track scroll position — one observer watching every section
     const sections = document.querySelectorAll('section[id]');
-    new IntersectionObserver((entries) => {
+    const sectionObserver = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
-    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 }).observe;
-    sections.forEach(s => {
-      new IntersectionObserver((entries) => {
-        entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
-      }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 }).observe(s);
-    });
+    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+    sections.forEach(s => sectionObserver.observe(s));
 
     // Reposition on resize
     window.addEventListener('resize', () => {
@@ -147,17 +133,12 @@
     // ═══════════════════════════════════
     // 4) Reveal on scroll
     // ═══════════════════════════════════
-    new IntersectionObserver((entries, obs) => {
+    const revealObserver = new IntersectionObserver((entries, obs) => {
       entries.forEach(e => {
         if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); }
       });
-    }, { threshold: 0.12 }).observe && document.querySelectorAll('.reveal').forEach(el => {
-      new IntersectionObserver((entries, obs) => {
-        entries.forEach(e => {
-          if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); }
-        });
-      }, { threshold: 0.12 }).observe(el);
-    });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
     // ═══════════════════════════════════
     // 6) Cmd+K command palette
@@ -288,7 +269,6 @@
       const k = (e.key || '').toLowerCase();
       konamiBuf.push(k);
       konamiBuf = konamiBuf.slice(-konami.length);
-      console.log('[konami]', konamiBuf.join(' → '));
       if (konamiBuf.length === konami.length && konamiBuf.every((v, i) => v === konami[i])) {
         e.preventDefault();
         burstConfetti();
@@ -319,6 +299,7 @@
     });
 
     function burstConfetti() {
+      showToast('🏆', 'Easter egg unlocked!', 2800);
       const colors = ['#007AFF','#0A84FF','#FF3B30','#FF9500','#FFCC00','#34C759','#5856D6','#AF52DE','#FF2D55'];
       const N = 140;
       const w = window.innerWidth;
@@ -365,29 +346,7 @@
 
 
     // ═══════════════════════════════════
-    // 8) Live Lyon time in footer
-    // ═══════════════════════════════════
-    function updateClock() {
-      const el = document.getElementById('clock');
-      if (!el) return;
-      const fmt = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Europe/Paris',
-        weekday: 'long',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: false
-      });
-      const parts = fmt.formatToParts(new Date());
-      const wd = parts.find(p => p.type === 'weekday').value;
-      const h = parts.find(p => p.type === 'hour').value;
-      const m = parts.find(p => p.type === 'minute').value;
-      el.textContent = `🕐 Lyon · ${wd} ${h}:${m}`;
-    }
-    updateClock();
-    setInterval(updateClock, 30000);
-
-    // ═══════════════════════════════════
-    // 9) Vertical scroll dots
+    // 8) Vertical scroll dots
     // ═══════════════════════════════════
     const scrollDots = document.querySelectorAll('.scroll-dot');
     scrollDots.forEach(dot => {
@@ -400,16 +359,8 @@
       scrollDots.forEach(d => d.classList.toggle('active', d.dataset.target === id));
     }
 
-    // Hook into existing IntersectionObserver — the existing setActive call already updates nav items.
-    // Wrap setActive to also update scroll dots.
-    const _origSetActive = setActive;
-    setActive = function(id) {
-      _origSetActive(id);
-      setScrollDotActive(id);
-    };
-
     // ═══════════════════════════════════
-    // 10) iOS toast helper
+    // 9) iOS toast helper
     // ═══════════════════════════════════
     const toast = document.getElementById('toast');
     const toastEmoji = document.getElementById('toastEmoji');
@@ -507,13 +458,6 @@
       c.action();
     }
 
-    // Konami → toast + confetti
-    const _origBurst = burstConfetti;
-    burstConfetti = function() {
-      showToast('🏆', 'Easter egg unlocked!', 2800);
-      _origBurst();
-    };
-
     // Holiday keyboard triggers (typed phrases)
     const triggers = { 'nye': 'nye', 'xmas': 'xmas', 'hannu': 'hanu', 'easter': 'easter' };
     let phrasebuf = '';
@@ -547,15 +491,10 @@
     // ═══════════════════════════════════
     // 13) Theme transition wave (View Transitions API)
     // ═══════════════════════════════════
-    // Replace existing themeToggle handler with one that supports view transition
-    const themeToggleNew = document.getElementById('themeToggle');
-    // Remove old listener by cloning the node
-    const themeToggleClone = themeToggleNew.cloneNode(true);
-    themeToggleNew.replaceWith(themeToggleClone);
-    themeToggleClone.addEventListener('click', (e) => {
+    themeToggle.addEventListener('click', () => {
       const r = document.documentElement;
       const next = r.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      const rect = themeToggleClone.getBoundingClientRect();
+      const rect = themeToggle.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
       const maxR = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
@@ -647,10 +586,6 @@
         }
       })
       .catch(() => {});
-    // Override the original clock updater
-    if (typeof updateClock === 'function') {
-      window._origUpdateClock = updateClock;
-    }
     setInterval(updateClockWithWeather, 30000);
     updateClockWithWeather();
 
