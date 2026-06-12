@@ -1,4 +1,7 @@
-// ── Theme toggle ──
+// ── Reduced motion preference ──
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // ── Theme toggle ──
     const themeToggle = document.getElementById('themeToggle');
     const root = document.documentElement;
     const saved = localStorage.getItem('theme');
@@ -13,7 +16,7 @@
         const target = document.querySelector(link.getAttribute('href'));
         if (!target) return;
         e.preventDefault();
-        window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+        window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 80, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
       });
     });
 
@@ -91,6 +94,7 @@
     // 1) Cursor-following spotlight (whole page)
     // ═══════════════════════════════════
     document.addEventListener('mousemove', e => {
+      if (reduceMotion.matches) return;
       document.body.style.setProperty('--mx', e.clientX + 'px');
       document.body.style.setProperty('--my', e.clientY + 'px');
     });
@@ -114,6 +118,7 @@
     function animateCounter(el) {
       const target = parseInt(el.dataset.target, 10);
       const suffix = el.dataset.suffix || '';
+      if (reduceMotion.matches) { el.textContent = target + suffix; return; }
       const duration = 1100;
       const start = performance.now();
       function tick(t) {
@@ -178,7 +183,7 @@
     function scrollToId(id) {
       const el = document.getElementById(id);
       if (!el) return;
-      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
     }
     function copyEmail() {
       navigator.clipboard.writeText('boxus.s@gmail.com').then(() => {
@@ -300,6 +305,7 @@
 
     function burstConfetti() {
       showToast('🏆', 'Easter egg unlocked!', 2800);
+      if (reduceMotion.matches) return;
       const colors = ['#007AFF','#0A84FF','#FF3B30','#FF9500','#FFCC00','#34C759','#5856D6','#AF52DE','#FF2D55'];
       const N = 140;
       const w = window.innerWidth;
@@ -394,6 +400,7 @@
     // 12) Holiday effects + Konami upgrade
     // ═══════════════════════════════════
     function emojiRain(emojis, count = 60, duration = 4500) {
+      if (reduceMotion.matches) return;
       for (let i = 0; i < count; i++) {
         const el = document.createElement('div');
         el.className = 'holiday-particle';
@@ -416,6 +423,7 @@
     }
 
     function fireworks(rounds = 6) {
+      if (reduceMotion.matches) return;
       const colors = ['#FF3B30','#FF9500','#FFCC00','#34C759','#007AFF','#5856D6','#AF52DE','#FF2D55'];
       for (let r = 0; r < rounds; r++) {
         setTimeout(() => {
@@ -515,7 +523,7 @@
         });
       };
 
-      if (document.startViewTransition) {
+      if (document.startViewTransition && !reduceMotion.matches) {
         document.startViewTransition(apply);
       } else {
         apply();
@@ -604,6 +612,7 @@
     // ═══════════════════════════════════
     let idleTimer;
     function wakeWave() {
+      if (reduceMotion.matches) return;
       const wave = document.querySelector('.wave');
       if (!wave) return;
       wave.animate([
