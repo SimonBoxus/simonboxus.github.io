@@ -1358,41 +1358,6 @@
     }
     .skip-link:focus-visible { transform: translateY(0); }
 
-    /* ══════════════════════════════
-       LIQUID GLASS (refraction active)
-       Set by liquid-glass.js in Chromium: the backdrop-filter becomes a
-       real SVG refraction filter, so thin the white veil to let the
-       refracted backdrop show through.
-    ══════════════════════════════ */
-    html.liquid-glass nav.top-nav,
-    html.liquid-glass nav.bottom-nav {
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.32) 0%,
-        rgba(255,255,255,0.10) 50%,
-        rgba(255,255,255,0.22) 100%);
-    }
-    html.liquid-glass .nav-lens,
-    html.liquid-glass .bottom-nav-lens {
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.42) 0%,
-        rgba(255,255,255,0.18) 50%,
-        rgba(255,255,255,0.32) 100%);
-    }
-    html.liquid-glass[data-theme="dark"] nav.top-nav,
-    html.liquid-glass[data-theme="dark"] nav.bottom-nav {
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.07) 0%,
-        rgba(255,255,255,0.02) 50%,
-        rgba(255,255,255,0.04) 100%);
-    }
-    html.liquid-glass[data-theme="dark"] .nav-lens,
-    html.liquid-glass[data-theme="dark"] .bottom-nav-lens {
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.14) 0%,
-        rgba(255,255,255,0.05) 50%,
-        rgba(255,255,255,0.08) 100%);
-    }
-
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
